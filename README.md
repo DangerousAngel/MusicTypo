@@ -1,10 +1,6 @@
 # Music Typo 🎵
 
 > Intelligent music classifier and `.m3u8` playlist generator that analyzes songs by streaming directly into the **middle of each track**.
-
-Created with ❤️ by [**DangerousAngel**](https://github.com/DangerousAngel)  
-GitHub Repository: [DangerousAngel/MusicTypo](https://github.com/DangerousAngel/MusicTypo)
-
 ---
 
 ## ✨ Features
@@ -41,7 +37,7 @@ python cli.py -f "song1.mp3" "song2.wav" -o "./Playlists"
 # Custom mid-song duration (e.g. 15s) and file organizing:
 python cli.py -i "D:/My Music" -d 15 --organize copy
 ```
-
+by [**ME**](https://github.com/DangerousAngel)  
 ---
 
 ## 👤 Author
