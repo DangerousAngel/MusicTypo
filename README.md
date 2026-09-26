@@ -42,4 +42,4 @@ python cli.py -i "D:/My Music" -d 15 --organize copy
 ## 👤 Author
 
 - **GitHub**: [@DangerousAngel](https://github.com/DangerousAngel)
-- **Project**: [MusicTypo](https://github.com/DangerousAngel/MusicTypo)
+
