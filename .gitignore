@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing & Outputs
+Playlists_Output/
+tests/sample_playlists/
+tests/sample_file_playlists/
+tests/sample_audio/*.wav
+.pytest_cache/
+.coverage
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
