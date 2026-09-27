@@ -159,8 +159,10 @@ def main():
     table = Table(title="Classification Results", show_lines=True)
     table.add_column("Track", style="white", no_wrap=False)
     table.add_column("Primary Type", style="bold magenta")
+    table.add_column("Mode / Key", style="magenta")
     table.add_column("Confidence", justify="right", style="green")
     table.add_column("Secondary Tags", style="cyan")
+    table.add_column("Language", style="cyan")
     table.add_column("BPM", justify="right", style="yellow")
     table.add_column("Duration", justify="right", style="dim")
 
@@ -169,8 +171,10 @@ def main():
         table.add_row(
             r.title,
             r.primary_type,
+            f"{r.mode} | {r.key}",
             f"{r.confidence:.0%}",
             sec_str,
+            r.vocal_language,
             f"{r.bpm:.0f}" if r.bpm > 0 else "-",
             f"{int(r.total_duration // 60)}:{int(r.total_duration % 60):02d}"
         )
@@ -189,6 +193,20 @@ def main():
         pl_str = pl_path.name if pl_path else "[dim]None[/dim]"
         if count > 0:
             summary_table.add_row(cat, str(count), str(pl_str))
+
+    # Language Playlists
+    lang_keys = [k for k in playlists.keys() if k.startswith("Language_")]
+    if lang_keys:
+        summary_table.add_row("[dim]-- Vocal Languages --[/dim]", "", "")
+        for k in sorted(lang_keys):
+            summary_table.add_row(f"[cyan]{k.replace('_', ' ')}[/cyan]", "-", playlists[k].name)
+
+    # Mode Playlists
+    mode_keys = [k for k in playlists.keys() if k.startswith("Mode_")]
+    if mode_keys:
+        summary_table.add_row("[dim]-- Musical Modes --[/dim]", "", "")
+        for k in sorted(mode_keys):
+            summary_table.add_row(f"[magenta]{k.replace('_', ' ')}[/magenta]", "-", playlists[k].name)
 
     # Add master
     if "Master" in playlists:

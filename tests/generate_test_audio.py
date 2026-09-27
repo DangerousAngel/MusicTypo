@@ -189,6 +189,70 @@ def generate_epic_track(output_path: Path, duration: float = 35.0, sr: int = 220
     sf.write(str(output_path), epic_wave, sr)
 
 
+def generate_electronic_track(output_path: Path, duration: float = 35.0, sr: int = 22050):
+    """Machine-perfect tempo (128 BPM), synth leads, heavy high-frequency content, sidechain compression."""
+    samples = int(duration * sr)
+    t = np.linspace(0, duration, samples, False)
+    bpm = 128.0
+    beat_samples = int(sr * 60.0 / bpm)
+    saw = 2 * (t * 440.0 - np.floor(t * 440.0 + 0.5))
+    square = np.sign(np.sin(2 * np.pi * 880.0 * t) + np.sin(2 * np.pi * 1760.0 * t))
+    mix = saw * 0.6 + square * 0.4
+    pulse = np.abs(np.sin(np.pi * (bpm / 60.0) * t)) ** 3
+    audio = mix * pulse
+    kick = generate_kick(sr, duration=0.2)
+    for i in range(0, samples - len(kick), beat_samples):
+        audio[i : i + len(kick)] += kick * 0.7
+    audio = np.tanh(audio * 1.8)
+    audio = audio / (np.max(np.abs(audio)) + 1e-6) * 0.85
+    sf.write(str(output_path), audio, sr)
+
+def generate_oud_track(output_path: Path, duration: float = 35.0, sr: int = 22050):
+    """Simulate oud/oriental with minor-mode plucked string harmonics."""
+    t = np.linspace(0, duration, int(duration * sr), False)
+    oud = np.zeros_like(t)
+    notes = [220.0, 261.63, 293.66]
+    note_dur = 1.0
+    for idx in range(int(duration / note_dur)):
+        f0 = notes[idx % len(notes)]
+        start = int(idx * note_dur * sr)
+        end = min(len(t), int((idx + 1) * note_dur * sr))
+        if start >= len(t): break
+        t_sub = t[start:end] - t[start]
+        vibrato = 1.0 + 0.015 * np.sin(2 * np.pi * 6.0 * t_sub)
+        f_curr = f0 * vibrato
+        sig = (np.sin(2 * np.pi * f_curr * t_sub) + 0.5 * np.sin(2 * np.pi * 2 * f_curr * t_sub) + 0.25 * np.sin(2 * np.pi * 3 * f_curr * t_sub))
+        env = np.exp(-t_sub * 4)
+        oud[start:end] += sig * env
+    oud = oud / (np.max(np.abs(oud)) + 1e-6) * 0.8
+    sf.write(str(output_path), oud, sr)
+
+def generate_jazz_track(output_path: Path, duration: float = 35.0, sr: int = 22050):
+    """Swing rhythm with walking bass, brass-like harmonics, varied timing."""
+    t = np.linspace(0, duration, int(duration * sr), False)
+    jazz = np.zeros_like(t)
+    bpm = 120
+    beat_samples = int(sr * 60 / bpm)
+    for i in range(0, len(t), beat_samples):
+        if i + beat_samples < len(t):
+            t_beat = np.linspace(0, 60/bpm, beat_samples, False)
+            bass_f = 65.41 if (i // beat_samples) % 4 in [0, 2] else 73.42
+            bass = np.sin(2 * np.pi * bass_f * t_beat) * np.exp(-t_beat * 3)
+            jazz[i:i+beat_samples] += bass * 0.8
+    
+    brass_notes = [440.0, 523.25, 587.33]
+    for idx, f in enumerate(brass_notes):
+        start = int(sr * (1.5 + idx * 2.0))
+        if start + sr * 2 < len(t):
+            t_brass = np.linspace(0, 2.0, sr * 2, False)
+            brass = (np.sin(2 * np.pi * f * t_brass) + 0.5 * np.sin(2 * np.pi * 2 * f * t_brass) + 0.3 * np.sin(2 * np.pi * 3 * t_brass * f))
+            env = np.sin(np.pi * t_brass / 2.0)
+            jazz[start:start+sr*2] += brass * env * 0.5
+
+    jazz = jazz / (np.max(np.abs(jazz)) + 1e-6) * 0.8
+    sf.write(str(output_path), jazz, sr)
+
+
 def generate_all_samples(target_dir: Path | str) -> list[Path]:
     """Generates a complete suite of synthetic music tracks for testing."""
     folder = Path(target_dir)
@@ -200,6 +264,9 @@ def generate_all_samples(target_dir: Path | str) -> list[Path]:
         ("Synthetic_Vocal_Melody.wav", generate_vocal_track),
         ("Synthetic_Rock_Riff.wav", generate_rock_track),
         ("Synthetic_Epic_Crescendo.wav", generate_epic_track),
+        ("Synthetic_Electronic_Track.wav", generate_electronic_track),
+        ("Synthetic_Oud_Track.wav", generate_oud_track),
+        ("Synthetic_Jazz_Track.wav", generate_jazz_track),
     ]
 
     generated = []

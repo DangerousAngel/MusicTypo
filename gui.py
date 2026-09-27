@@ -44,14 +44,12 @@ COLOR_ROW_SELECT = "#581c87"    # Selected row violet glow
 COLOR_BORDER_BTN = "#433560"    # Outline button border
 
 CATEGORY_ICONS = {
-    "Epic": "🎸",
-    "Beat": "🥁",
-    "Piano": "🎹",
-    "Classical": "🎻",
-    "Rock": "🎸",
-    "Melody": "🎵",
-    "Vocal": "🎤",
-    "Ambient": "🌌"
+    "Rock": "🎸", "Metal": "⚡", "Beat": "🥁", "Hip-Hop": "🎤", "Trap": "💣",
+    "Electronic": "🎛️", "House-Techno": "🔊", "Synthwave": "🕹️", "Lo-Fi": "☕",
+    "Piano": "🎹", "Acoustic": "🪕", "Melody": "🎵", "Epic": "🎬", "Classical": "🎻",
+    "Vocal": "🎙️", "Choral-Opera": "⛪", "Ambient": "🌌", "Jazz": "🎷", "Blues": "🎺",
+    "Soul-Funk": "🪩", "R&B": "💜", "Oud": "🪕", "Reggae": "🌴", "Latin": "💃",
+    "Pop": "⭐", "Country": "🤠", "Punk-Alternative": "🧷", "World-Folk": "🌍"
 }
 
 
@@ -75,6 +73,13 @@ class ModernMusicTypoApp(ctk.CTk):
         self.selected_files = []  # Stores list of specific selected files if chosen
         self.is_running = False
         self.msg_queue = queue.Queue()
+
+        # Dynamic Filtering Variables
+        self.all_classified_results = []
+        self.search_filter_var = tk.StringVar(value="")
+        self.type_filter_var = tk.StringVar(value="All Types")
+        self.mode_filter_var = tk.StringVar(value="All Modes")
+        self.lang_filter_var = tk.StringVar(value="All Languages")
 
         self._configure_treeview_styles()
         self._build_ui()
@@ -460,6 +465,94 @@ class ModernMusicTypoApp(ctk.CTk):
         )
         self.tab_log_btn.pack(side=tk.LEFT)
 
+        # Right Section: Dynamic Filters (Search, Type, Mode, Language)
+        self.filters_frame = ctk.CTkFrame(tabs_container, fg_color="transparent")
+        self.filters_frame.pack(side=tk.RIGHT)
+
+        # Search Entry
+        self.search_entry = ctk.CTkEntry(
+            self.filters_frame,
+            textvariable=self.search_filter_var,
+            placeholder_text="🔍 Search...",
+            font=ctk.CTkFont(family="Segoe UI", size=10),
+            width=130,
+            height=26,
+            fg_color="#181c2d",
+            border_color="#2c334d",
+            corner_radius=6
+        )
+        self.search_entry.pack(side=tk.LEFT, padx=(0, 6))
+        self.search_entry.bind("<KeyRelease>", lambda e: self._apply_filters())
+
+        # Type Filter Dropdown
+        type_options = ["All Types"] + sorted(CATEGORIES)
+        self.type_dropdown = ctk.CTkOptionMenu(
+            self.filters_frame,
+            variable=self.type_filter_var,
+            values=type_options,
+            width=115,
+            height=26,
+            font=ctk.CTkFont(family="Segoe UI", size=10),
+            fg_color="#181c2d",
+            button_color="#28304c",
+            dropdown_fg_color="#141826",
+            corner_radius=6,
+            command=lambda v: self._apply_filters()
+        )
+        self.type_dropdown.pack(side=tk.LEFT, padx=(0, 6))
+
+        # Mode Filter Dropdown
+        self.mode_dropdown = ctk.CTkOptionMenu(
+            self.filters_frame,
+            variable=self.mode_filter_var,
+            values=["All Modes", "Major", "Minor"],
+            width=95,
+            height=26,
+            font=ctk.CTkFont(family="Segoe UI", size=10),
+            fg_color="#181c2d",
+            button_color="#28304c",
+            dropdown_fg_color="#141826",
+            corner_radius=6,
+            command=lambda v: self._apply_filters()
+        )
+        self.mode_dropdown.pack(side=tk.LEFT, padx=(0, 6))
+
+        # Language Filter Dropdown
+        languages_list = [
+            "All Languages", "Arabic", "English", "Spanish", "French", "German",
+            "Italian", "Portuguese", "Russian", "Turkish", "Persian", "Korean",
+            "Japanese", "Hindi", "Instrumental"
+        ]
+        self.lang_dropdown = ctk.CTkOptionMenu(
+            self.filters_frame,
+            variable=self.lang_filter_var,
+            values=languages_list,
+            width=115,
+            height=26,
+            font=ctk.CTkFont(family="Segoe UI", size=10),
+            fg_color="#181c2d",
+            button_color="#28304c",
+            dropdown_fg_color="#141826",
+            corner_radius=6,
+            command=lambda v: self._apply_filters()
+        )
+        self.lang_dropdown.pack(side=tk.LEFT, padx=(0, 6))
+
+        # Clear filters button
+        btn_clear_filters = ctk.CTkButton(
+            self.filters_frame,
+            text="✕",
+            width=26,
+            height=26,
+            font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
+            fg_color="#21263c",
+            hover_color="#323a5c",
+            text_color="#94a3b8",
+            corner_radius=6,
+            command=self._clear_filters
+        )
+        btn_clear_filters.pack(side=tk.LEFT)
+
         # 4. Content Area (Table or Log)
         self.content_container = ctk.CTkFrame(
             self.main_container,
@@ -477,7 +570,7 @@ class ModernMusicTypoApp(ctk.CTk):
     def _build_table_view(self):
         self.table_frame = ctk.CTkFrame(self.content_container, fg_color="transparent")
 
-        columns = ("title", "category", "confidence", "secondary", "bpm", "duration", "path")
+        columns = ("title", "category", "mode_key", "confidence", "secondary", "language", "bpm", "duration", "path")
         self.tree = ttk.Treeview(
             self.table_frame,
             columns=columns,
@@ -488,16 +581,20 @@ class ModernMusicTypoApp(ctk.CTk):
 
         self.tree.heading("title", text="Track Title", anchor="w")
         self.tree.heading("category", text="Primary Type", anchor="center")
+        self.tree.heading("mode_key", text="Mode / Key", anchor="center")
         self.tree.heading("confidence", text="Confidence", anchor="center")
         self.tree.heading("secondary", text="Secondary Tags", anchor="w")
+        self.tree.heading("language", text="Language", anchor="center")
         self.tree.heading("bpm", text="BPM", anchor="center")
         self.tree.heading("duration", text="Length", anchor="center")
         self.tree.heading("path", text="Full Path", anchor="w")
 
         self.tree.column("title", width=200, minwidth=140, anchor="w")
         self.tree.column("category", width=120, minwidth=90, anchor="center")
+        self.tree.column("mode_key", width=120, minwidth=90, anchor="center")
         self.tree.column("confidence", width=95, minwidth=80, anchor="center")
         self.tree.column("secondary", width=220, minwidth=140, anchor="w")
+        self.tree.column("language", width=90, minwidth=70, anchor="center")
         self.tree.column("bpm", width=65, minwidth=50, anchor="center")
         self.tree.column("duration", width=70, minwidth=60, anchor="center")
         self.tree.column("path", width=300, minwidth=180, anchor="w")
@@ -539,6 +636,7 @@ class ModernMusicTypoApp(ctk.CTk):
             text_color=COLOR_TEXT_MUTED,
             font=ctk.CTkFont(family="Segoe UI", size=11)
         )
+        self.filters_frame.pack(side=tk.RIGHT)
         self.log_frame.pack_forget()
         self.table_frame.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
 
@@ -556,8 +654,76 @@ class ModernMusicTypoApp(ctk.CTk):
             text_color=COLOR_TEXT_MUTED,
             font=ctk.CTkFont(family="Segoe UI", size=11)
         )
+        self.filters_frame.pack_forget()
         self.table_frame.pack_forget()
         self.log_frame.pack(fill=tk.BOTH, expand=True)
+
+    def _clear_filters(self):
+        self.search_filter_var.set("")
+        self.type_filter_var.set("All Types")
+        self.mode_filter_var.set("All Modes")
+        self.lang_filter_var.set("All Languages")
+        self._apply_filters()
+
+    def _matches_filters(self, res: ClassificationResult) -> bool:
+        query = self.search_filter_var.get().strip().lower()
+        if query:
+            match_txt = f"{res.title} {res.artist} {res.primary_type} {' '.join(res.secondary_tags)} {res.mode} {res.key} {res.vocal_language}".lower()
+            if query not in match_txt:
+                return False
+
+        type_filter = self.type_filter_var.get()
+        if type_filter != "All Types":
+            if res.primary_type != type_filter and type_filter not in res.secondary_tags:
+                return False
+
+        mode_filter = self.mode_filter_var.get()
+        if mode_filter != "All Modes":
+            if res.mode != mode_filter:
+                return False
+
+        lang_filter = self.lang_filter_var.get()
+        if lang_filter != "All Languages":
+            if res.vocal_language.lower() != lang_filter.lower():
+                return False
+
+        return True
+
+    def _apply_filters(self):
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+
+        for res in self.all_classified_results:
+            if self._matches_filters(res):
+                self._insert_track_row(res)
+
+    def _insert_track_row(self, res: ClassificationResult):
+        cat_icon = CATEGORY_ICONS.get(res.primary_type, "🎵")
+        prim_str = f"{cat_icon} {res.primary_type}"
+
+        sec_formatted = []
+        for sec in res.secondary_tags:
+            sec_icon = CATEGORY_ICONS.get(sec, "")
+            sec_formatted.append(f"{sec_icon} {sec}".strip())
+        sec_str = ", ".join(sec_formatted) if sec_formatted else "-"
+
+        dur_str = f"{int(res.total_duration // 60)}:{int(res.total_duration % 60):02d}"
+
+        self.tree.insert(
+            "",
+            tk.END,
+            values=(
+                res.title,
+                prim_str,
+                f"{res.mode} | {res.key}",
+                f"{res.confidence:.0%}",
+                sec_str,
+                res.vocal_language,
+                f"{int(round(res.bpm))}" if res.bpm > 0 else "-",
+                dur_str,
+                str(res.file_path)
+            )
+        )
 
     def _on_slider_moved(self, val):
         self.slider_label.configure(text=f"Mid-Song Read: {int(float(val))}s")
@@ -609,8 +775,8 @@ class ModernMusicTypoApp(ctk.CTk):
         if not item_id:
             return
         values = self.tree.item(item_id, "values")
-        if values and len(values) >= 7:
-            filepath = values[6]
+        if values and len(values) >= 9:
+            filepath = values[8]
             if Path(filepath).exists() and sys.platform == "win32":
                 try:
                     os.startfile(filepath)
@@ -647,7 +813,8 @@ class ModernMusicTypoApp(ctk.CTk):
         self.status_label.configure(text="Initializing scan...")
         self.progress_bar.set(0)
 
-        # Clear existing table items
+        # Clear existing table items and cached results
+        self.all_classified_results.clear()
         for item in self.tree.get_children():
             self.tree.delete(item)
 
@@ -723,34 +890,9 @@ class ModernMusicTypoApp(ctk.CTk):
                     )
 
                     if res:
-                        # Icon formatting matching screenshot
-                        cat_icon = CATEGORY_ICONS.get(res.primary_type, "🎵")
-                        prim_str = f"{cat_icon} {res.primary_type}"
-
-                        # Secondary tags formatting with icons
-                        sec_formatted = []
-                        for sec in res.secondary_tags:
-                            sec_icon = CATEGORY_ICONS.get(sec, "")
-                            sec_formatted.append(f"{sec_icon} {sec}".strip())
-                        sec_str = ", ".join(sec_formatted) if sec_formatted else "-"
-
-                        # Duration formatting
-                        dur_str = f"{int(res.total_duration // 60)}:{int(res.total_duration % 60):02d}"
-
-                        # Add row to table
-                        self.tree.insert(
-                            "",
-                            tk.END,
-                            values=(
-                                res.title,
-                                prim_str,
-                                f"{res.confidence:.0%}",
-                                sec_str,
-                                f"{int(round(res.bpm))}" if res.bpm > 0 else "-",
-                                dur_str,
-                                str(res.file_path)
-                            )
-                        )
+                        self.all_classified_results.append(res)
+                        if self._matches_filters(res):
+                            self._insert_track_row(res)
 
                 elif msg_type == "done":
                     stats, playlists = data

@@ -17,6 +17,9 @@ class TrackMetadata:
     genre: str
     year: Optional[str] = None
     bpm: Optional[float] = None
+    language: Optional[str] = None
+    lyrics: Optional[str] = None
+    comment: Optional[str] = None
     raw_tags: Optional[dict] = None
 
 
@@ -32,6 +35,9 @@ def extract_metadata(file_path: Path | str) -> TrackMetadata:
     default_genre = ""
     bpm_val: Optional[float] = None
     year_val: Optional[str] = None
+    lang_val: Optional[str] = None
+    lyrics_val: Optional[str] = None
+    comment_val: Optional[str] = None
     raw_dict = {}
 
     try:
@@ -86,6 +92,27 @@ def extract_metadata(file_path: Path | str) -> TrackMetadata:
                     year_val = str(val[0] if isinstance(val, list) else val).strip()[:4]
                     break
 
+            # Language (TLAN in ID3, language in Vorbis/MP4)
+            for k in ["language", "TLAN", "\xa9lan", "lang"]:
+                if k in tags:
+                    val = tags[k]
+                    lang_val = str(val[0] if isinstance(val, list) else val).strip()
+                    break
+
+            # Lyrics (USLT / SYLT in ID3, lyrics in Vorbis, \xa9lyr in MP4)
+            for k in ["lyrics", "USLT", "SYLT", "unsyncedlyrics", "\xa9lyr"]:
+                if k in tags:
+                    val = tags[k]
+                    lyrics_val = str(val[0] if isinstance(val, list) else val).strip()
+                    break
+
+            # Comments
+            for k in ["comment", "COMM", "\xa9cmt", "description"]:
+                if k in tags:
+                    val = tags[k]
+                    comment_val = str(val[0] if isinstance(val, list) else val).strip()
+                    break
+
             raw_dict = {str(k): str(v) for k, v in tags.items()}
 
     except Exception:
@@ -99,5 +126,8 @@ def extract_metadata(file_path: Path | str) -> TrackMetadata:
         genre=default_genre,
         year=year_val,
         bpm=bpm_val,
+        language=lang_val,
+        lyrics=lyrics_val,
+        comment=comment_val,
         raw_tags=raw_dict
     )

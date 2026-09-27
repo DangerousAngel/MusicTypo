@@ -78,7 +78,7 @@ class PlaylistGenerator:
                 artist_title = f"{t.artist} - {t.title}"
                 # Add metadata comment
                 lines.append(f"#EXTINF:{duration_sec},{artist_title}")
-                lines.append(f"# [Category: {t.primary_type} | BPM: {t.bpm} | Confidence: {t.confidence:.0%}]")
+                lines.append(f"# [Category: {t.primary_type} | Mode: {t.mode} | Key: {t.key} | Language: {t.vocal_language} | BPM: {t.bpm:.0f} | Confidence: {t.confidence:.0%}]")
                 lines.append(self._format_track_path(playlist_path, t.file_path))
                 lines.append("")
 
@@ -99,6 +99,7 @@ class PlaylistGenerator:
                 duration_sec = int(round(t.total_duration)) if t.total_duration > 0 else -1
                 artist_title = f"{t.artist} - {t.title}"
                 master_lines.append(f"#EXTINF:{duration_sec},{artist_title}")
+                master_lines.append(f"# [Mode: {t.mode} | Key: {t.key} | Language: {t.vocal_language}]")
                 master_lines.append(self._format_track_path(master_path, t.file_path))
                 master_lines.append("")
 
@@ -106,6 +107,51 @@ class PlaylistGenerator:
             f.write("\n".join(master_lines))
 
         generated_playlists["Master"] = master_path
+
+        # Generate Vocal Language Playlists (e.g. Arabic, English, Spanish, Instrumental)
+        lang_groups: Dict[str, List[ClassificationResult]] = {}
+        for r in results:
+            lang_groups.setdefault(r.vocal_language, []).append(r)
+
+        for lang, tracks in sorted(lang_groups.items()):
+            safe_lang = "".join(c for c in lang if c.isalnum() or c in ("-", "_", " ")).strip()
+            lang_pl_name = f"Language - {safe_lang}.m3u8"
+            lang_pl_path = self.output_dir / lang_pl_name
+
+            lang_lines = ["#EXTM3U", f"# Vocal Language: {lang} ({len(tracks)} tracks)", ""]
+            for t in tracks:
+                duration_sec = int(round(t.total_duration)) if t.total_duration > 0 else -1
+                lang_lines.append(f"#EXTINF:{duration_sec},{t.artist} - {t.title}")
+                lang_lines.append(f"# [Category: {t.primary_type} | Mode: {t.mode} | Key: {t.key}]")
+                lang_lines.append(self._format_track_path(lang_pl_path, t.file_path))
+                lang_lines.append("")
+
+            with open(lang_pl_path, "w", encoding="utf-8") as f:
+                f.write("\n".join(lang_lines))
+            generated_playlists[f"Language_{lang}"] = lang_pl_path
+
+        # Generate Mode Playlists (Major, Minor)
+        mode_groups: Dict[str, List[ClassificationResult]] = {}
+        for r in results:
+            mode_groups.setdefault(r.mode, []).append(r)
+
+        for mode_val, tracks in sorted(mode_groups.items()):
+            safe_mode = "".join(c for c in mode_val if c.isalnum() or c in ("-", "_", " ")).strip()
+            mode_pl_name = f"Mode - {safe_mode}.m3u8"
+            mode_pl_path = self.output_dir / mode_pl_name
+
+            mode_lines = ["#EXTM3U", f"# Musical Mode: {mode_val} ({len(tracks)} tracks)", ""]
+            for t in tracks:
+                duration_sec = int(round(t.total_duration)) if t.total_duration > 0 else -1
+                mode_lines.append(f"#EXTINF:{duration_sec},{t.artist} - {t.title}")
+                mode_lines.append(f"# [Category: {t.primary_type} | Key: {t.key} | Language: {t.vocal_language}]")
+                mode_lines.append(self._format_track_path(mode_pl_path, t.file_path))
+                mode_lines.append("")
+
+            with open(mode_pl_path, "w", encoding="utf-8") as f:
+                f.write("\n".join(mode_lines))
+            generated_playlists[f"Mode_{mode_val}"] = mode_pl_path
+
         return generated_playlists
 
     def generate_reports(self, results: List[ClassificationResult]) -> Tuple[Path, Path]:
@@ -123,6 +169,9 @@ class PlaylistGenerator:
                 "Primary Type",
                 "Confidence",
                 "Secondary Tags",
+                "Mode",
+                "Key",
+                "Vocal Language",
                 "BPM",
                 "Total Duration (s)",
                 "Snippet Offset (s)",
@@ -136,6 +185,9 @@ class PlaylistGenerator:
                     r.primary_type,
                     f"{r.confidence:.2%}",
                     ", ".join(r.secondary_tags),
+                    r.mode,
+                    r.key,
+                    r.vocal_language,
                     r.bpm,
                     round(r.total_duration, 1),
                     round(r.snippet_offset, 1),
@@ -154,6 +206,9 @@ class PlaylistGenerator:
                 "primary_type": r.primary_type,
                 "confidence": r.confidence,
                 "secondary_tags": r.secondary_tags,
+                "mode": r.mode,
+                "key": r.key,
+                "vocal_language": r.vocal_language,
                 "category_scores": r.category_scores,
                 "bpm": r.bpm,
                 "duration_seconds": round(r.total_duration, 2),
