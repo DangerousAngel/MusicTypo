@@ -1,6 +1,6 @@
 # Music Typo 🎵
 
-> Intelligent music classifier and `.m3u8` playlist generator that analyzes songs by streaming directly into the **middle of each track**.
+> Intelligent music classifier that save you from waste to organized playlists, analyzes songs by streaming directly into the **middle of each track**.
 
 ![ss](Screenshot.png)
 ---
