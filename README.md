@@ -2,7 +2,7 @@
 
 > Intelligent music classifier and `.m3u8` playlist generator that analyzes songs by streaming directly into the **middle of each track**.
 
-[!ss](Screenshot.png)
+(!ss)[Screenshot.png]
 ---
 
 ## Features
