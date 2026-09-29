@@ -3,23 +3,14 @@
 > Intelligent music classifier and `.m3u8` playlist generator that analyzes songs by streaming directly into the **middle of each track**.
 ---
 
-## ✨ Features
+## Features
 
-- **Mid-Song Smart Seek**: Reads only a 15–30s excerpt from the middle of the track ($\text{duration}/2$), skipping intros/outros for fast, accurate classification.
-- **28 Nuanced Musical Categories**:
-  - **Acoustic & Classical**: Piano, Acoustic, Classical, Melody, Choral-Opera, World-Folk
-  - **Electronic & Modern**: Electronic, House-Techno, Synthwave, Lo-Fi, Beat, Trap, Hip-Hop
-  - **Rock & Energy**: Rock, Metal, Punk-Alternative, Epic
-  - **Groove & Soul**: Jazz, Blues, Soul-Funk, R&B, Reggae
-  - **Regional & World**: Oud (Middle Eastern / Arabic / Maqam), Latin (Reggaeton, Salsa, Flamenco), Country, Pop, Vocal
-- **Advanced Mode & Key Detection**: Detects musical modes (Major, Minor, Dorian, Phrygian / Maqam Hijaz, Lydian, Mixolydian, Harmonic Minor) and exact pitch centers.
-- **Multilingual Vocal Language Identification**: Identifies vocal language (Arabic, English, Spanish, French, German, Italian, Portuguese, Russian, Turkish, Persian, Korean, Japanese, Hindi, or Instrumental) using acoustic vocal formant analysis, script detection, and metadata tag inspection.
-- **Smart Categorized Playlists**: Produces standard UTF-8 `.m3u8` playlists by Category, by Vocal Language, by Musical Mode, and a unified Master playlist, plus CSV & JSON reports.
-- **Cyber-Dark Modern Desktop GUI**: Built with CustomTkinter featuring real-time search, category/mode/language filter menus, progress tracking, and double-click to play. Also includes a rich CLI.
+- Classifies music into 28 categories, from Arabic Oud and Classical to Rock, EDM, and Hip-Hop.
+- Detects musical modes, keys, and vocal languages.
+- Generates `.m3u8` playlists by genre, language, and mode, plus CSV and JSON reports.
+- Includes a modern desktop GUI and CLI for easy use.
 
----
-
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Install
 ```bash
